@@ -1,9 +1,8 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { UsersService } from '../users.service';
-import { NextFunction, Request } from 'express';
-import { User } from '../entities/user.entity';
+import { Request, Response, NextFunction } from 'express';
+import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
 
-// resolves ts error with req.currentUser
 declare global {
   namespace Express {
     interface Request {
@@ -21,11 +20,9 @@ export class CurrentUserMiddleware implements NestMiddleware {
 
     if (userId) {
       const user = await this.usersService.findOne(userId);
-
       req.currentUser = user;
-
-      // don't forget to use because request won't pass through middleware if you don't
-      next();
     }
+
+    next();
   }
 }
