@@ -9,7 +9,9 @@ import { Report } from './reports/entities/report.entity';
 import { APP_PIPE } from '@nestjs/core';
 import * as process from 'process';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmConfigService } from './config/typeorm.config';
 const cookieSession = require('cookie-session');
+const dbConfig = require('../ormconfig.js');
 
 @Module({
   imports: [
@@ -18,22 +20,8 @@ const cookieSession = require('cookie-session');
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        return {
-          type: 'sqlite',
-          database: config.get<string>('DB_NAME'),
-          synchronize: true,
-          entities: [User, Report],
-        };
-      },
+      useClass: TypeOrmConfigService
     }),
-    // TypeOrmModule.forRoot({
-    //   type: 'sqlite',
-    //   database: 'db.sqlite',
-    //   entities: [User, Report],
-    //   synchronize: true, // updates the structure of the database, ONLY FOR DEVELOPMENT ENVIRONMENT
-    // }),
     UsersModule,
     ReportsModule,
   ],
@@ -51,11 +39,12 @@ const cookieSession = require('cookie-session');
 })
 export class AppModule {
   //this way we are making cookie session a global middleware, which means it is applied to every request comes into our application
+  constructor(private configService: ConfigService) {}
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(
         cookieSession({
-          keys: ['kasdflkjas3fdk389udsn'],
+          keys: [this.configService.get('COOKIE_KEY')],
         }),
       )
       .forRoutes('*');
